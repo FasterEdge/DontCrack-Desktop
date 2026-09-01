@@ -2,7 +2,7 @@
 name = "dontcrack-desktop"
 version = "1.0.20260901"
 description = "DontCrack 统一管理桌面客户端"
-authors = ["FasterEdge"]
+authors = ["FasterEdge <fasteredge@mutantcat.org>"]
 edition = "2021"
 
 [lib]
