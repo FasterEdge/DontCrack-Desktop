@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────
+// FasterEdge 开源项目
+// Github: https://github.com/FasterEdge
+// Gitee:  https://gitee.com/FasterEdge
+// ─────────────────────────────────────────────────────────────
 import { invoke } from '@tauri-apps/api/core'
 
 export type Platform = 'windows' | 'linux' | 'android' | 'openharmony'
