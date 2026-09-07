@@ -14,13 +14,27 @@ async fn dc_request(
     password: Option<String>,
     timeout_ms: u64,
 ) -> Result<String, String> {
+    // 仅允许 http/https, 且禁止 URL 内嵌账号密码(防凭据注入/异常协议)
+    let mut parsed = reqwest::Url::parse(&url).map_err(|e| format!("无效地址: {e}"))?;
+    match parsed.scheme() {
+        "http" | "https" => {}
+        _ => return Err("仅支持 http/https 地址".to_string()),
+    }
+    if parsed.host_str().is_none() {
+        return Err("地址缺少主机名".to_string());
+    }
+    if !parsed.username().is_empty() || parsed.password().is_some() {
+        return Err("地址中不允许携带内嵌账号密码".to_string());
+    }
+
+    // 超时上限 30 秒, 防止 webview 触发无限等待
+    let timeout_ms = timeout_ms.min(30_000);
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_millis(timeout_ms))
         .build()
         .map_err(|e| e.to_string())?;
 
-    // 解析 URL 并追加 password 查询参数（DontCrack 鉴权约定）
-    let mut parsed = reqwest::Url::parse(&url).map_err(|e| format!("无效地址: {e}"))?;
+    // 追加 password 查询参数(DontCrack 鉴权约定)
     if let Some(pwd) = password {
         if !pwd.is_empty() {
             parsed.query_pairs_mut().append_pair("password", &pwd);
@@ -34,6 +48,10 @@ async fn dc_request(
 
     let status = resp.status();
     let body = resp.text().await.map_err(|e| e.to_string())?;
+    // 响应体上限 16MB, 防止异常 agent 返回超大响应撑爆桌面端内存
+    if body.len() > 16 * 1024 * 1024 {
+        return Err("响应体超过 16MB 上限".to_string());
+    }
     if !status.is_success() {
         return Err(format!("HTTP {}: {}", status.as_u16(), body));
     }

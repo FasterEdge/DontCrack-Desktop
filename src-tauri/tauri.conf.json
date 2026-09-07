@@ -4,6 +4,6 @@
   "version": "1.0.20260901",
   "identifier": "com.fasteredge.dontcrack.desktop",
   "build": { "beforeDevCommand": "npm run dev", "devUrl": "http://localhost:1420", "beforeBuildCommand": "npm run build", "frontendDist": "../dist" },
-  "app": { "windows": [{ "title": "DontCrack 统一管理工具", "width": 1360, "height": 880, "minWidth": 1080, "minHeight": 720 }], "security": { "csp": null } },
+  "app": { "windows": [{ "title": "DontCrack 统一管理工具", "width": 1360, "height": 880, "minWidth": 1080, "minHeight": 720 }], "security": { "csp": "default-src 'self'; script-src 'self' http://localhost:1420; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ipc: http://ipc.localhost http://localhost:1420 ws://localhost:1420; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" } },
   "bundle": { "active": true, "targets": "all", "icon": ["icons/icon.png"] }
 }
