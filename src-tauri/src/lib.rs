@@ -41,17 +41,29 @@ async fn dc_request(
         }
     }
 
-    let resp = match method.to_uppercase().as_str() {
+    let mut resp = match method.to_uppercase().as_str() {
         "POST" => client.post(parsed).send().await.map_err(|e| e.to_string())?,
         _ => client.get(parsed).send().await.map_err(|e| e.to_string())?,
     };
 
     let status = resp.status();
-    let body = resp.text().await.map_err(|e| e.to_string())?;
-    // 响应体上限 16MB, 防止异常 agent 返回超大响应撑爆桌面端内存
-    if body.len() > 16 * 1024 * 1024 {
-        return Err("响应体超过 16MB 上限".to_string());
+    // 响应体上限 16MB, 防止异常 agent 返回超大响应撑爆桌面端内存。
+    // 必须在流式读取过程中限流: 先 .text() 全量读入后再检查长度, 内存在检查前
+    // 已被耗尽, 上限形同虚设。
+    const MAX_BODY: u64 = 16 * 1024 * 1024;
+    if let Some(len) = resp.content_length() {
+        if len > MAX_BODY {
+            return Err("响应体超过 16MB 上限".to_string());
+        }
     }
+    let mut buf: Vec<u8> = Vec::new();
+    while let Some(chunk) = resp.chunk().await.map_err(|e| e.to_string())? {
+        if buf.len() as u64 + chunk.len() as u64 > MAX_BODY {
+            return Err("响应体超过 16MB 上限".to_string());
+        }
+        buf.extend_from_slice(&chunk);
+    }
+    let body = String::from_utf8(buf).map_err(|e| format!("响应体不是合法 UTF-8: {e}"))?;
     if !status.is_success() {
         return Err(format!("HTTP {}: {}", status.as_u16(), body));
     }
