@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '要构建并上传的版本标签，例如 v1.0.20260920；留空则跟随当前分支或标签'
+        description: '要构建并上传的版本标签，例如 v1.0.20261022；留空则跟随当前分支或标签'
         required: false
         type: string
   push:
