@@ -17,7 +17,10 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-reqwest = { version = "0.13", default-features = false, features = ["rustls-tls", "json", "stream"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json", "stream"] }
+# reqwest 0.13 把加密提供者拆了出去：aws-lc-rs 在 Windows 需要 NASM、且无法交叉编译到
+# Linux arm64，所以这里自带 ring provider，并由 lib.rs 显式安装。
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

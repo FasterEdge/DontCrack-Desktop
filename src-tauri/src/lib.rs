@@ -5,6 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 use tauri::Manager;
 
+/// reqwest 0.13 起不再内置 TLS 加密提供者，必须在构造 Client 之前装一个，
+/// 否则 `Client::builder().build()` 会直接 panic。这里固定装 ring：纯 Rust、
+/// 可交叉编译，Windows 也不需要 NASM。重复安装返回 Err，忽略即可。
+fn ensure_rustls_provider() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    });
+}
+
 /// 向 DontCrack 服务端发起请求（GET/POST），返回响应体文本。
 /// 通过 Rust 侧 reqwest 代理，规避 WebView 的 CORS 限制。
 #[tauri::command]
@@ -29,6 +39,7 @@ async fn dc_request(
 
     // 超时上限 30 秒, 防止 webview 触发无限等待
     let timeout_ms = timeout_ms.min(30_000);
+    ensure_rustls_provider();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_millis(timeout_ms))
         .build()
